@@ -29,8 +29,20 @@ public class BasePage {
         this.wait = new WebDriverWait(driver,5);
     }
     public WebElement FindElement(By by) {
-        wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(by));
-        return driver.findElement(by);
+
+        WebElement element = null;
+
+        try {
+
+            wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(by));
+            element = driver.findElement(by);
+
+        } catch (Exception e) {
+
+            logger.error("WebElement bulunamadı.");
+
+        }
+        return element;
     }
     public List<WebElement> FindElements(By by) {
 
@@ -42,8 +54,7 @@ public class BasePage {
 
         } catch (Exception e) {
 
-            System.out.println("Disabled item not exist.");
-
+            logger.warn("Disabled item bulunmuyor.");
         }
 
         return list;
@@ -52,12 +63,28 @@ public class BasePage {
         FindElement(by).sendKeys(text);
     }
     public void Click(By by) {
-        wait.until(ExpectedConditions.elementToBeClickable(by));
-        FindElement(by).click();
+
+        try {
+
+            wait.until(ExpectedConditions.elementToBeClickable(by));
+            FindElement(by).click();
+
+        } catch (Exception e) {
+
+            logger.error("Element tıklanamıyor.");
+        }
+
+
     }
     public void WaitPageLoad(String webURL) {
         WebDriverWait wait = new WebDriverWait(driver  , 1);
-        wait.until(ExpectedConditions.urlToBe(webURL));
+
+        try {
+            wait.until(ExpectedConditions.urlToBe(webURL));
+        } catch (Exception e) {
+
+            logger.error("Site açılamıyor.");
+        }
     }
     public void ClearText(By by) {
         FindElement(by).sendKeys(Keys.COMMAND + "a");
@@ -69,55 +96,70 @@ public class BasePage {
     public void SendEnter(By by){
         FindElement(by).sendKeys(Keys.ENTER);
     }
-    public void FindCards(By by) throws IOException {
+    public void FindCards(By by) {
         List<WebElement> cards = FindElements(by);
-        //System.out.println(cards.get(0).getText());
         cards.get(0).click();
-
     }
-    public String ReadFromExcel(int productNo) throws Exception {
+    public String ReadFromExcel(int productNo)  {
 
-        String filePath = System.getProperty("user.dir") + "/Excel/search_data.xlsx";
-        File src = new File(filePath);
-        FileInputStream fis = new FileInputStream(src);
-        XSSFWorkbook xsf = new XSSFWorkbook(fis);
-        XSSFSheet sheet = xsf.getSheetAt(0);
-        return sheet.getRow(productNo).getCell(0).getStringCellValue();
+        String outputValue = null;
+
+        try {
+            String filePath = System.getProperty("user.dir") + "/Excel/search_data.xlsx";
+            File src = new File(filePath);
+            FileInputStream fis = new FileInputStream(src);
+            XSSFWorkbook xsf = new XSSFWorkbook(fis);
+            XSSFSheet sheet = xsf.getSheetAt(0);
+            outputValue = sheet.getRow(productNo).getCell(0).getStringCellValue();
+
+        } catch (IOException e) {
+
+            logger.fatal("Error is " + e);
+        }
+
+        return outputValue;
 
     }
     public void WriteToFile(By name, By price){
 
-        String dataName = FindElement(name).getText();
-        String dataPrice = FindElement(price).getText();
-        String filePath = System.getProperty("user.dir") + "/urunbilgi.txt";
-
         try {
+
+            String dataName = FindElement(name).getText();
+            String dataPrice = FindElement(price).getText();
+            String filePath = System.getProperty("user.dir") + "/urunbilgi.txt";
             BufferedWriter writer = new BufferedWriter(new FileWriter(filePath));
             writer.write(dataName + "\n" + dataPrice);
             writer.close();
+
         } catch (IOException e) {
 
             logger.fatal("Error is " + e);
         }
 
     }
-    public String GetFromTextFromFile() throws IOException {
+    public String GetTextFromFile()  {
 
-        File file = new File("/Users/omermesebuken/Desktop/Selenium Projects/Beymen/urunbilgi.txt");
-        FileReader fr = new FileReader(file);
-        BufferedReader br = new BufferedReader(fr);
-        String price;
+        String price = null;
 
-        br.readLine();
-        price = br.readLine();
+        try {
 
-        fr.close();
+            File file = new File("/Users/omermesebuken/Desktop/Selenium Projects/Beymen/urunbilgi.txt");
+            FileReader fr = new FileReader(file);
+            BufferedReader br = new BufferedReader(fr);
+            br.readLine();
+            price = br.readLine();
+            fr.close();
+
+        } catch (IOException e) {
+
+            logger.fatal("Error is " + e);
+        }
 
         return price;
     }
-    public void CompareStrings(By by) throws IOException {
+    public void CompareStrings(By by) {
 
-        String firstPrice = GetFromTextFromFile();
+        String firstPrice = GetTextFromFile();
 
         String lastPrice = FindElement(by).getText();
         lastPrice = lastPrice.replace(",00", "");
@@ -131,10 +173,7 @@ public class BasePage {
 
         List<WebElement> allSizes = FindElements(all_Sizes);
         List<WebElement> disabledSizes = FindElements(disabled_Sizes);
-
         List<WebElement> activeSizes = new ArrayList<>();
-
-
 
         for (WebElement item: allSizes) {
 
@@ -144,23 +183,24 @@ public class BasePage {
             }
         }
 
-
         activeSizes.get(0).click();
 
     }
     public void IncreaseItemSizeAndCheck(By by) {
+
         Select se = new Select(FindElement(by));
         se.selectByValue("2");
 
         WebElement selectedOption = se.getFirstSelectedOption();
         Assert.assertEquals(selectedOption.getText(),"2 adet");
-        System.out.println("Current item count is 2.");
+        logger.info("Ürün adedi 2.");
+
     }
     public void DeleteItemFromBasketAndCheck(By by, By by2) throws InterruptedException {
         Click(by);
         Wait(500);
         Assert.assertEquals(FindElement(by2).getText(),"SEPETINIZDE ÜRÜN BULUNMAMAKTADIR");
-        System.out.println("Basket is empty.");
+        logger.info("Ürün silindi.");
     }
 
 
