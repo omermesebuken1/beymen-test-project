@@ -22,7 +22,7 @@ public class BasePage {
     WebDriver driver;
     WebDriverWait wait;
 
-    private final Logger logger = LogManager.getLogger(MainPage.class);
+    private final Logger logger = LogManager.getLogger(BasePage.class);
 
     public BasePage(WebDriver driver) {
         this.driver = driver;
